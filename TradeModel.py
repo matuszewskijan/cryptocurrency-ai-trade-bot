@@ -2,7 +2,7 @@ import math
 import tensorflow as tf
 from tensorflow.python.keras import Sequential, optimizers
 from tensorflow.keras.models import Model
-from tensorflow.python.keras.layers import Dense, Dropout, LSTM, Input, Activation, BatchNormalization, concatenate
+from tensorflow.python.keras.layers import Dense, Dropout, LSTM, Input, Activation, BatchNormalization, concatenate, Flatten, Conv1D
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
