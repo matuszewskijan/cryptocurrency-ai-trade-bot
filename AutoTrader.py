@@ -36,8 +36,8 @@ class AutoTrader:
         else:
             print(">> Not enough BTC left in your account to buy USD ")
 
-    def runSimulation(self,samples,prices):
-        print("> Trading Automatically for ",TESTING_MONTHS)
+    def runSimulation(self, samples, prices, interval, trade_months):
+        print("> Trading Automatically for ", trade_months)
         day_count = 0
         for i in range(0,len(samples)):
 
