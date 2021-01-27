@@ -38,8 +38,9 @@ if __name__ == '__main__':
     print("\n> Welcome to Crypto-Trading AI")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--collect_coins",action="store_true")
-    parser.add_argument("--train_and_trade", action="store_true")
+    parser.add_argument("--collect_coins", action="store_true")
+    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--trade", action="store_true")
     parser.add_argument("--start")
     parser.add_argument("--end")
     parser.add_argument("--pair")
