@@ -4,6 +4,8 @@ from sklearn.utils import shuffle
 import numpy as np
 import json
 import math
+import talib
+from talib.abstract import *
 from Config import *
 
 class Dataset:
