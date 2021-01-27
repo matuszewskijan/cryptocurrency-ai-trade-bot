@@ -43,17 +43,14 @@ class AutoTrader:
         for i in range(0, len(samples) - 1):
             if i % (one_hour_interval * 24) == 0:
                 day_count += 1
-                print("#################################################################################################")
+                print("##########################################   DAY ", day_count ,"   #########################################")
                 print("#           Account Balance: $", (self.account.usd_balance + self.account.btc_balance), " BTC: $",
                       self.account.btc_balance, " USD: $", self.account.usd_balance, "")
-                print("#################################################################################################")
-                print("##########################################   DAY ",day_count,"   #########################################")
 
-
-            if i % 6 == 0: # Perform a prediction every 6 hours
                 prediction = self.advisor.predict(np.array([samples[i]]))
-                #btc_price = samples[i][len(samples[i])-1]
-                btc_price = prices[i]
+            if prediction == None or prediction == 2:
+                self.sell(sell_price=1.03)
+                continue
 
                 if self.account.btc_price != 0:
                     self.account.btc_balance = self.account.btc_amount * btc_price
