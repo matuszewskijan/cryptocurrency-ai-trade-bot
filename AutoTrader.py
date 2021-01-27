@@ -9,6 +9,7 @@ class AutoTrader:
         self.advisor = model
         self.account = VirtualAccount()
         self.trade_amount = 100
+        self.next_window_price = 0
 
     def buy(self):
         prev_bought_at = self.account.bought_btc_at # How much did I buy BTC for before
@@ -51,6 +52,9 @@ class AutoTrader:
             if prediction == None or prediction == 2:
                 self.sell(sell_price=1.03)
                 continue
+
+            btc_price = prices[i][0]
+            self.next_window_price = prices[i + 1][0]
 
                 if self.account.btc_price != 0:
                     self.account.btc_balance = self.account.btc_amount * btc_price
