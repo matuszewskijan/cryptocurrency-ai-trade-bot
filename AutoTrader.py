@@ -39,9 +39,9 @@ class AutoTrader:
     def runSimulation(self, samples, prices, interval, trade_months):
         print("> Trading Automatically for ", trade_months)
         day_count = 0
-        for i in range(0,len(samples)):
-
-            if i % 24 == 0:
+        one_hour_interval = int(1 / (interval / 60))
+        for i in range(0, len(samples) - 1):
+            if i % (one_hour_interval * 24) == 0:
                 day_count += 1
                 print("#################################################################################################")
                 print("#           Account Balance: $", (self.account.usd_balance + self.account.btc_balance), " BTC: $",
