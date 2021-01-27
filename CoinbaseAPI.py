@@ -12,15 +12,18 @@ class CoinbaseAPI:
         self.public_client = cbpro.PublicClient()
 
     # [ time, low, high, open, close, volume ],
-    def getCoinHistoricData(self,coin_pair,start,end,granularity):
-        print("> Collecting historic data for "+coin_pair," from ",start," to ",end," every ",granularity," sec")
+    def getCoinHistoricData(self, coin_pair, start, end, granularity):
+        print("> Collecting historic data for ", coin_pair, " from ",start," to ",end," every ",granularity," sec")
 
-        data = []
+        data = {}
         start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
         end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
 
         while (start_date <= end_date):
-            print("> Date: ",start_date)
+            if not datetime.datetime.strftime(start_date, '%Y_%m') in data:
+                data[datetime.datetime.strftime(start_date, '%Y_%m')] = []
+
+            print("> Date: ", start_date)
             start_limit = start_date
             end_limit = start_date + datetime.timedelta(hours=1)
 
@@ -30,9 +33,12 @@ class CoinbaseAPI:
             for nd in next_data:
                 reversed_response.append(nd)
 
-            data.append(list(reversed(reversed_response)))
+            data[datetime.datetime.strftime(start_date, '%Y_%m')].append(list(reversed(reversed_response)))
+
             start_date += datetime.timedelta(minutes=61)
-            time.sleep(3)
+
+            # Coinbase rate limit is 3 requests per second but it seems that 0.2 delay is enough to not hit the limit
+            time.sleep(0.2)
 
         return data
 
