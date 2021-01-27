@@ -62,13 +62,14 @@ class AutoTrader:
                 self.account.btc_price = btc_price
 
                 if prediction == 1:
+                if self.next_window_price / btc_price < 0.99:
                     self.buy()
+                elif self.next_window_price / btc_price > 1:
+                    self.sell()
                 else:
                     self.sell()
 
                 self.account.btc_balance = self.account.btc_amount * btc_price
-
-                time.sleep(1)  # Only for Visual Purposes
 
         print("#################################################################################################")
         print("#           Account Balance: $", (self.account.usd_balance + self.account.btc_balance), " BTC: $",
