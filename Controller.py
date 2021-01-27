@@ -42,6 +42,8 @@ if __name__ == '__main__':
     parser.add_argument("--train_and_trade", action="store_true")
     parser.add_argument("--start")
     parser.add_argument("--end")
+    parser.add_argument("--pair")
+    parser.add_argument("--interval")
     args = parser.parse_args()
 
     dataset = Dataset()
@@ -49,12 +51,12 @@ if __name__ == '__main__':
     if args.collect_coins:
         start_date = args.start if args.start else "2020-01-01"
         end_date = args.end if args.end else "2020-02-02"
-        tokens = start_date.split("-")
-        month = tokens[0] + "_" + tokens[1] + "_"
+        pair = args.pair if args.pair else "BTC-USD"        
+        interval = int(args.interval) if args.interval else 30
 
         coinbaseAPI = CoinbaseAPI()
-        historic_data = coinbaseAPI.getCoinHistoricData(COIN_PAIR, start=start_date, end=end_date,granularity=GRANULARITY)
-        dataset.storeRawCoinHistoricData(month,COIN_PAIR,historic_data)
+        historic_data = coinbaseAPI.getCoinHistoricData(pair, start=start_date, end=end_date, granularity=interval * 60)
+        dataset.storeRawCoinHistoricData(pair, interval, historic_data)
 
         print("> Using Coinbase API to build dataset for ",COIN_PAIR)
 
