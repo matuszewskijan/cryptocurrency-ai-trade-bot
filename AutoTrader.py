@@ -26,7 +26,7 @@ class AutoTrader:
             self.account.transactions.append(transaction)
 
             self.account.btc_amount += (self.trade_amount / self.next_window_price) * 0.995
-                self.account.usd_balance -= self.trade_amount
+            self.account.usd_balance -= self.trade_amount
             self.account.bought_btc_price = self.next_window_price
             self.account.bought_btc_units += 1
             current_transactions += 1
@@ -35,6 +35,13 @@ class AutoTrader:
         for i, transaction in enumerate(self.account.transactions, start=0):
             if (self.next_window_price / transaction['btc_price']) > sell_price:
                 print(">> SELLING $", transaction['usd_amount'], " WORTH OF BITCOIN (GAIN: ", 
+                    ((self.next_window_price * transaction['btc_amount']) * 0.995) - transaction['usd_amount'], "$)")
+                self.account.btc_amount -= transaction['btc_amount']
+                self.account.usd_balance += (self.next_window_price * transaction['btc_amount']) * 0.995
+                self.account.bought_btc_units -= 1
+                self.account.transactions.pop(i)
+            elif (self.next_window_price / transaction['btc_price']) < 0.985:
+                print(">> STOP LOSS $", transaction['usd_amount'], " WORTH OF BITCOIN (LOSE: ", 
                     ((self.next_window_price * transaction['btc_amount']) * 0.995) - transaction['usd_amount'], "$)")
                 self.account.btc_amount -= transaction['btc_amount']
                 self.account.usd_balance += (self.next_window_price * transaction['btc_amount']) * 0.995
@@ -51,8 +58,8 @@ class AutoTrader:
                 print("##########################################   DAY ", day_count ,"   #########################################")
                 print("#           Account Balance: $", (self.account.usd_balance + self.account.btc_balance), " BTC: $",
                       self.account.btc_balance, " USD: $", self.account.usd_balance, "")
-
-                prediction = self.advisor.predict(np.array([samples[i]]))
+            
+            prediction = self.advisor.predict(np.array([samples[i]]))
             if prediction == None or prediction == 2:
                 self.sell(sell_price=1.03)
                 continue
@@ -60,20 +67,20 @@ class AutoTrader:
             btc_price = prices[i][0]
             self.next_window_price = prices[i + 1][0]
 
-                if self.account.btc_price != 0:
-                    self.account.btc_balance = self.account.btc_amount * btc_price
+            if self.account.btc_price != 0:
+                self.account.btc_balance = self.account.btc_amount * btc_price
 
-                self.account.btc_price = btc_price
+            self.account.btc_price = btc_price
 
-                if prediction == 1:
+            if prediction == 1:
                 if self.next_window_price / btc_price < 0.99:
                     self.buy()
                 elif self.next_window_price / btc_price > 1:
                     self.sell()
-                else:
-                    self.sell()
+            else:
+                self.sell()
 
-                self.account.btc_balance = self.account.btc_amount * btc_price
+            self.account.btc_balance = self.account.btc_amount * btc_price
 
         print("#################################################################################################")
         print("#           Account Balance: $", (self.account.usd_balance + self.account.btc_balance), " BTC: $",
