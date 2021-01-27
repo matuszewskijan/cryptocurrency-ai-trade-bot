@@ -60,11 +60,29 @@ if __name__ == '__main__':
         dataset.storeRawCoinHistoricData(pair, interval, historic_data)
 
         print("> Using Coinbase API to build dataset for ",COIN_PAIR)
-
-    elif args.train_and_trade:
+    elif args.train:
         print("> Creating Training Data for ", COIN_PAIR)
-        data = dataset.loadCoinData(COIN_PAIR, TRAINING_MONTHS)
-        x_train, y_train, _ = dataset.createTrainTestSets(COIN_PAIR, data, training_window=TRAINING_WINDOW, labeling_window=LABELING_WINDOW)
+
+        pair = args.pair if args.pair else "BTC-USD"
+        interval = int(args.interval) if args.interval else 15
+
+        training_months = args.months.split(',') if args.months else TRAINING_MONTHS
+
+        data = dataset.loadCoinData(pair, interval, training_months)        
+        x_train, y_train, _ = dataset.createTrainTestSets(pair, data, interval)
+
+        data = dataset.loadCoinData(pair, interval, ["2020-03", "2020-04", "2020-05", "2020-06"])
+        test_tech_indicators, test_predictions, _ = dataset.createTrainTestSets(pair, data, interval)
+
+        test_model = TradeModel("AutoTraderAI", x_train)        
+        history = test_model.train(x_train, y_train, test_tech_indicators, test_predictions, batch_size=256, epochs=100)
+        test_model.evaluate(test_tech_indicators, test_predictions)
+        
+        plt.plot(history.history['accuracy'])
+        plt.plot(history.history['val_accuracy'])
+        plt.show()
+        
+        test_model.model.save("models/" + pair + "/" + str(interval))
 
         print("> Creating Testing Data for ", COIN_PAIR)
         data = dataset.loadCoinData(COIN_PAIR, TESTING_MONTHS)
