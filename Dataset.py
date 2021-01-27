@@ -15,10 +15,11 @@ class Dataset:
     """
         Stores Raw historic data of a particular coin in JSON format
     """
-    def storeRawCoinHistoricData(self, name, coin_name, data):
-        print("> Storing Raw Historic Data for ", coin_name)
-        with open('raw_historic_data/' + name + "_" + coin_name + '.json', 'w') as outfile:
-            json.dump(data, outfile)
+    def storeRawCoinHistoricData(self, pair, interval, data):
+        print("> Storing Raw Historic Data for ", pair)
+        for month, values in data.items():
+            with open('datasets/' + pair + '/' + str(interval) + '/' + month + '.json', 'w+') as outfile:
+                json.dump(values, outfile)
 
     """
         Loads raw historic data of a particular coin and converts to JSON format
