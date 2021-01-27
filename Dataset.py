@@ -37,7 +37,7 @@ class Dataset:
         return data
 
     """
-        Loads all the coin data, for the selected months, into an ordered array. 
+        Loads all the coin data, for the selected months, into an ordered array.
         Each row represents a the status of the coin each minute.
     """
     def loadCoinData(self, pair, interval, months):
@@ -61,131 +61,196 @@ class Dataset:
         Creates the train/test sets (X,Y) based on a selection of windows and features.
         Raw variable headings: [time, low, high, open, close, volume]
     """
-    def createTrainTestSets(self,coin_name, coin_data, training_window = 180, labeling_window = 60, feature_window = 30):
-        print("> Creating X,Y sets for ",coin_name)
-        x = []
-        y = []
+    def createTrainTestSets(self,coin_name, coin_data, period, shuffling = True):
+        print("> Creating X,Y sets for ", coin_name)
+        
+        technical_indicators = []
+        predications = []
         prices = []
-
+        
         positive = 0
         negative = 0
-        block = 60  # Move 1 hour
-        start_index = 0
-        end_index = training_window -1
 
-        while end_index < len(coin_data) - labeling_window -block - 1:
+        current_index = 128 # Some random value to just have some offset at the beginning
+        end_index = len(coin_data) - 10
+
+        average_close_price = 0
+        average_volume = 0
+
+        one_hour_samples = int(1 / (period / 60))
+
+        all_as_dictionary = self.dictionary_data_in_period(coin_data, len(coin_data), len(coin_data))
+        rsi = RSI(all_as_dictionary)
+        macd = MACD(all_as_dictionary)
+        adx = ADX(all_as_dictionary)
+        adosc = ADOSC(all_as_dictionary)
+
+        while current_index < end_index:
             features = []
             self.feature_names = []
+            
+            cur_open_price = float(coin_data[current_index][3])
+            cur_close_price = float(coin_data[current_index][4])
+            
+            current_technical_indicators = self.technical_indicators(coin_data, current_index, period)    
+            
+            # Momentum indicators
+            self.feature_names.append("rsi")
+            current_technical_indicators.append(rsi[current_index])
+            self.feature_names.append("macd")
+            current_technical_indicators.append(macd[2][current_index])
+            self.feature_names.append("adx")
+            current_technical_indicators.append(adx[current_index])
 
-            # Latest Values
-            latest_low_price = coin_data[end_index][1]
-            latest_high_price = coin_data[end_index][2]
-            latest_open_price = coin_data[end_index][3]
-            latest_close_price = coin_data[end_index][4]
-            latest_volume = coin_data[end_index][5]
+            # Volume indicators
+            self.feature_names.append("adosc")
+            current_technical_indicators.append(adosc[current_index])            
+            
+            prices.append([cur_open_price, cur_close_price])
 
-            # Accelerations and Differences
-            acc_index = 0
-            total_window_volume = 0
-            prev_window_volume_acceleration = 0
-            window_volume_acceleration = 0
-            average_volume_acceleration = 0 # The average volume acceleration based on the feature window (local)
-            average_close_price_acceleration = 0 # The average close price acceleration based on the feature window (local)
-            average_close_price_diff = 0 # The average close price difference based on the feature window (local)
+            technical_indicators.append(current_technical_indicators)
 
-            # Averages
-            average_close_price = 0
-            average_volume = 0
-
-            for i in range(start_index,end_index):
-                cur_close_price = coin_data[i][4]
-                cur_volume = coin_data[i][5]
-                total_window_volume += cur_volume
-                window_volume_acceleration += cur_volume
-                average_close_price += cur_close_price
-
-                # Local Accelerations
-                acc_index += 1
-                if acc_index % feature_window == 0:
-                    # Local Close Price Acceleration
-                    close_price_acceleration = (cur_close_price / coin_data[i-feature_window][4]) - 1
-                    features.append(close_price_acceleration)
-                    self.feature_names.append("close_price_acc_"+str(acc_index))
-                    average_close_price_acceleration += close_price_acceleration
-
-                    # Local Close Price Difference - Only overal average added in features
-                    close_price_diff = cur_close_price - coin_data[i-feature_window][4]
-                    average_close_price_diff +=  close_price_diff
-
-                    # Local Volume Acceleration
-                    if prev_window_volume_acceleration != 0:
-                        volume_acceleration = (window_volume_acceleration / prev_window_volume_acceleration) - 1
-                        features.append(volume_acceleration)
-                        self.feature_names.append("volume_acc_"+str(acc_index))
-                    average_volume_acceleration += window_volume_acceleration
-                    prev_window_volume_acceleration = window_volume_acceleration
-                    window_volume_acceleration = 0
-
-            # Overall Averages
-            average_close_price /= training_window
-            average_close_price_acceleration /= training_window
-            average_volume /= training_window
-            average_volume_acceleration /= training_window
-
-            # Price
-            overall_price_difference = latest_close_price - coin_data[start_index][4]
-            overall_price_acceleration = (latest_close_price / coin_data[start_index][4]) - 1
-
-            # Adding Features and Feature Names
-            features.append(total_window_volume)
-            self.feature_names.append("volume_total")
-            features.append(latest_low_price)
-            self.feature_names.append("low_price_latest")
-            features.append(latest_high_price)
-            self.feature_names.append("high_price_latest")
-            features.append(latest_open_price)
-            self.feature_names.append("open_price_latest")
-
-            features.append(average_close_price)
-            self.feature_names.append("close_price_av")
-            features.append(average_close_price_acceleration)
-            self.feature_names.append("close_price_acc_av")
-            features.append(average_close_price_diff)
-            self.feature_names.append("close_price_diff_av")
-            features.append(average_volume)
-            self.feature_names.append("volume_av")
-            features.append(average_volume_acceleration)
-            self.feature_names.append("volume_acc_av")
-            features.append(overall_price_difference)
-            self.feature_names.append("overall_price_diff")
-            features.append(overall_price_acceleration)
-            self.feature_names.append("overal_price_acc")
-
-            # Last feature holds the latest price
-            features.append(latest_close_price)
-            self.feature_names.append("close_price_latest")
-            prices.append(latest_close_price)
-
-            x.append(features) # Add to training set
-            # Simple Up or Down Labeling
-            next_close_price = coin_data[end_index + labeling_window +1][4]
-
-            change_rate = (next_close_price/latest_close_price) - 1
-
+            next_period_avg_price = (coin_data[current_index + 1][3] + coin_data[current_index + 1][4]) / 2 
+            change_rate = (next_period_avg_price / cur_close_price) - 1
+            
             if change_rate > 0:
-                y.append(1)
+                predications.append(1)
                 positive += 1
             else:
-                y.append(0)
+                predications.append(0)
                 negative +=1
 
-            # Experiment between Rectangular and Moving Windows
-            start_index += block
-            end_index += block
+            current_index += 1
 
-        print("> Finished Creating set - Size: ",len(x)," ",len(y)," P: ",positive," N: ",negative)
+        print("> Finished Creating set - Size: ", len(technical_indicators)," ", len(predications)," P: ", positive," N: ", negative)
+        
+        technical_indicators = np.array(technical_indicators)
+        # import pdb; pdb.set_trace()
+        # scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+        technical_indicators = preprocessing.scale(technical_indicators)
 
-        x = preprocessing.scale(x)
-        x, y, prices = shuffle(x,y,prices)
+        if shuffling:
+            technical_indicators, predications, prices = shuffle(technical_indicators, predications, prices)
 
-        return np.array(x), np.array(y), prices
+        return technical_indicators, np.array(predications), prices
+
+    def technical_indicators(self, samples, index, period):
+        features = []
+        
+        cur_close_price = float(samples[index][4])
+        one_hour_samples = int(1 / (period / 60))
+        if period == 15 or period == 5:
+            avg_price_1_hour = self.avg_price_in_period(samples, index, one_hour_samples)
+            self.feature_names.append("avg_1_hour_price_difference")
+            features.append(cur_close_price / avg_price_1_hour)
+
+            bollinger_bands = self.bollinger_bands(samples, index, one_hour_samples)
+            self.feature_names.append("lower_bollinger_band_rate")
+            features.append(cur_close_price / bollinger_bands[0])
+            self.feature_names.append("middle_bollinger_band_rate")
+            features.append(cur_close_price / bollinger_bands[1])
+            self.feature_names.append("high_bollinger_band_rate")
+            features.append(cur_close_price / bollinger_bands[2])
+
+            high_price_1_hour = self.high_price_in_period(samples, index, one_hour_samples)
+            low_price_1_hour = self.low_price_in_period(samples, index, one_hour_samples)
+            self.feature_names.append("1_hour_high_to_current_price_rate")
+            features.append(cur_close_price / high_price_1_hour)
+            self.feature_names.append("1_hour_low_to_current_price_rate")
+            features.append(cur_close_price / low_price_1_hour)
+        elif period == 60:
+            avg_price_1_day = self.avg_price_in_period(samples, index, one_hour_samples * 24)
+            self.feature_names.append("avg_24_hour_price_difference")
+            features.append(cur_close_price / avg_price_1_day)
+
+            bollinger_bands = self.bollinger_bands(samples, index, one_hour_samples * 24)
+            self.feature_names.append("lower_bollinger_band")
+            features.append(bollinger_bands[0])
+            self.feature_names.append("middle_bollinger_band")
+            features.append(bollinger_bands[1])
+            self.feature_names.append("high_bollinger_band")
+            features.append(bollinger_bands[2])
+
+            high_price_1_day = self.high_price_in_period(samples, index, one_hour_samples * 24)
+            high_price_1_week = self.high_price_in_period(samples, index, (one_hour_samples * 24) * 7)
+            high_price_1_month = self.high_price_in_period(samples, index, (one_hour_samples * 24) * 30)
+            low_price_1_day = self.low_price_in_period(samples, index, one_hour_samples * 24)
+            low_price_1_week = self.low_price_in_period(samples, index, (one_hour_samples * 24) * 7)
+            low_price_1_month = self.low_price_in_period(samples, index, (one_hour_samples * 24) * 30)
+            self.feature_names.append("1_day_high_to_current_price_rate")
+            features.append(cur_close_price / high_price_1_day)
+            self.feature_names.append("1_week_high_to_current_price_rate")
+            features.append(cur_close_price / high_price_1_week)
+            self.feature_names.append("1_month_high_to_current_price_rate")
+            features.append(cur_close_price / high_price_1_month)
+            self.feature_names.append("1_day_low_to_current_price_rate")
+            features.append(cur_close_price / low_price_1_day)
+            self.feature_names.append("1_week_low_to_current_price_rate")
+            features.append(cur_close_price / low_price_1_week)
+            self.feature_names.append("1_month_low_to_current_price_rate")
+            features.append(cur_close_price / low_price_1_month)
+
+        return features
+
+    # One period is time between two samples in used datasets
+    def avg_price_in_period(self, samples, start_index, period):
+        avg = 0
+        index = start_index - period if start_index > period else 0
+        for sample in samples[index:start_index]:
+            avg += sample[4]
+
+        return avg / len(samples[index:start_index])
+
+    def high_price_in_period(self, samples, start_index, period):
+        prices = []
+        index = start_index - period if start_index > period else 0
+       
+        for sample in samples[index:start_index]:
+            prices.append(sample[4])
+
+        return np.max(prices)
+        
+    def low_price_in_period(self, samples, start_index, period):
+        prices = []
+        index = start_index - period if start_index > period else 0
+        
+        for sample in samples[index:start_index]:
+            prices.append(sample[4])
+
+        return np.min(prices)
+
+    def bollinger_bands(self, samples, start_index, period):
+        avg = self.avg_price_in_period(samples, start_index, period) 
+        
+        avg_bands = 0
+        index = start_index - period if start_index > period else 0
+        for sample in samples[index:start_index]:
+            avg_bands += (sample[4] - avg) ** 2
+        
+        avg_bands /= len(samples[index:start_index])
+        bands_squared = avg_bands ** 2
+
+        upper_band = avg + (2 * bands_squared)
+        middle_band = avg
+        lower_band = avg - (2 * bands_squared)
+
+        return [lower_band, middle_band, upper_band]
+
+    def dictionary_data_in_period(self, samples, start_index, period):
+        inputs = {
+            'open': np.array([]),
+            'high': np.array([]),
+            'low': np.array([]),
+            'close': np.array([]),
+            'volume': np.array([])
+        }
+
+        index = start_index - period if start_index > period else 0        
+        for sample in samples[index:start_index]:
+            inputs['low'] = np.append(inputs['low'], sample[1])
+            inputs['high'] = np.append(inputs['high'], sample[2])
+            inputs['open'] = np.append(inputs['open'], sample[3])
+            inputs['close'] = np.append(inputs['close'], sample[4])
+            inputs['volume'] = np.append(inputs['volume'], sample[5])
+            
+        return inputs
