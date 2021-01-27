@@ -1,5 +1,5 @@
 from Dataset import Dataset
-from Model import Model
+from TradeModel import TradeModel
 from Config import *
 import argparse
 import datetime
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         x_test, y_test, prices = dataset.createTrainTestSets(pair, data, interval, shuffling = False)
 
         model_path = "models/" + pair + "/" + str(interval)
-
+        
         model = TradeModel("AutoTraderAI", x_test, model_path)
         auto_trader = AutoTrader(model)
         auto_trader.runSimulation(x_test, prices, interval, trading_months)
