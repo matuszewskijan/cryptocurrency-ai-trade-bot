@@ -21,17 +21,16 @@ class TradeModel:
 
     def buildModel(self, x_train):
         model = Sequential()
-        x = len(x_train[0][0])
 
-        model.add(LSTM(512, input_shape=((2,x)), return_sequences = True, activation = "relu"))
+        model.add(LSTM(512, input_shape=((1, x_train.shape[1])), return_sequences=True, activation="relu"))
         model.add(Dropout(0.20))
         model.add(BatchNormalization())
 
-        model.add(LSTM(256, input_shape=((2, x)), return_sequences=True, activation="relu"))
+        model.add(LSTM(256, input_shape=((1, x_train.shape[1])), return_sequences=True, activation="relu"))
         model.add(Dropout(0.20))
         model.add(BatchNormalization())
 
-        model.add(LSTM(128, input_shape=((2, x)), return_sequences=False, activation="relu"))
+        model.add(LSTM(128, input_shape=((1 ,x_train.shape[1])), return_sequences=False, activation="relu"))
         model.add(Dropout(0.20))
         model.add(BatchNormalization())
 
@@ -42,7 +41,7 @@ class TradeModel:
         model.add(Dropout(0.5))
 
         model.add(Dense(2, activation="softmax"))
-        optimizer = tf.keras.optimizers.Adam(lr = 0.01)
+        optimizer = tf.keras.optimizers.Adam(lr = 0.001)
         model.compile(loss="sparse_categorical_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 
         from tensorflow.keras.utils import plot_model
@@ -53,13 +52,12 @@ class TradeModel:
     def train(self, x_train, y_train, x_test, y_test, batch_size, epochs):
         custom_early_stopping = EarlyStopping(
             monitor='accuracy', 
-            patience=10, 
+            patience=20, 
             min_delta=0.0001, 
             mode='max'
         )
 
-        # x_train = x_train.reshape(-1,1,len(x_train[0]))
-        # import pdb; pdb.set_trace()
+        x_train = x_train.reshape(-1,1,len(x_train[0]))
         
         print("> Training model - ", self.model_name)
         
@@ -67,8 +65,9 @@ class TradeModel:
                               validation_data=(x_test, y_test), validation_split=0.1, callbacks=[custom_early_stopping])
 
     def evaluate(self, x_test, y_test):
-        # x_test = x_test.reshape(-1, 1, len(x_test[0]))
         print("> Evaluating model - ", self.model_name)
+        
+        x_test = x_test.reshape(-1, 1, len(x_test[0]))
         
         predicated = self.model.predict(x_test)
         predictions = tf.argmax(predicated, 1).numpy().flatten()
@@ -79,7 +78,7 @@ class TradeModel:
         found_increase = 0
         expected_decrease = 0
         found_decrease = 0
-        # import pdb; pdb.set_trace()
+
         for i in range(0, len(predictions)):
             if y_test[i] == 2:
                 expected_stable += 1
