@@ -12,6 +12,10 @@ class AutoTrader:
         self.next_window_price = 0
 
     def buy(self):
+        if self.account.bought_btc_units >= 5: # We should avoid going all-in
+            self.sell(1.05) # Unlikely scenario but sell when profit is huge (>5%)
+            return
+
         current_transactions = 1
         while self.account.usd_balance - self.trade_amount >= 0 and self.account.bought_btc_units <= 5 and current_transactions <= 2:
             print(">> BUYING $", self.trade_amount, " WORTH OF BITCOIN")
