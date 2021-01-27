@@ -31,17 +31,15 @@ class AutoTrader:
             self.account.bought_btc_units += 1
             current_transactions += 1
 
-    def sell(self):
-        if self.account.btc_balance - self.trade_amount >= 0:
-            if self.account.btc_price > self.account.bought_btc_at: # Is it profitable?
-                print(">> SELLING $",self.trade_amount," WORTH OF BITCOIN")
-                self.account.btc_amount -= (self.trade_amount / self.account.btc_price)
-                self.account.usd_balance += self.trade_amount
-                self.account.last_transaction_was_sell = True
-            else:
-                print(">> Declining sale: Not profitable to sell BTC")
-        else:
-            print(">> Not enough BTC left in your account to buy USD ")
+    def sell(self, sell_price = 1.02):
+        for i, transaction in enumerate(self.account.transactions, start=0):
+            if (self.next_window_price / transaction['btc_price']) > sell_price:
+                print(">> SELLING $", transaction['usd_amount'], " WORTH OF BITCOIN (GAIN: ", 
+                    ((self.next_window_price * transaction['btc_amount']) * 0.995) - transaction['usd_amount'], "$)")
+                self.account.btc_amount -= transaction['btc_amount']
+                self.account.usd_balance += (self.next_window_price * transaction['btc_amount']) * 0.995
+                self.account.bought_btc_units -= 1
+                self.account.transactions.pop(i)
 
     def runSimulation(self, samples, prices, interval, trade_months):
         print("> Trading Automatically for ", trade_months)
