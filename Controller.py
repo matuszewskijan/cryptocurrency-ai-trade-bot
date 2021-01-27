@@ -60,15 +60,19 @@ if __name__ == '__main__':
         plt.show()
         
         test_model.model.save("models/" + pair + "/" + str(interval))
+    elif args.trade:
+        pair = args.pair if args.pair else "BTC-USD"
+        interval = int(args.interval) if args.interval else 15
+        trading_months = args.months.split(',') if args.months else TRADING_MONTHS
 
         data = dataset.loadCoinData(pair, interval, trading_months)
+        x_test, y_test, prices = dataset.createTrainTestSets(pair, data, interval, shuffling = False)
 
-        test_model = Model("AutoTraderAI", x_train)
-        test_model.train(x_train, y_train, batch_size=64, epochs=10)
-        # test_model.evaluate(x_test,y_test)
+        model_path = "models/" + pair + "/" + str(interval)
 
-        auto_trader = AutoTrader(test_model)
-        auto_trader.runSimulation(x_test, prices)
+        model = TradeModel("AutoTraderAI", x_test, model_path)
+        auto_trader = AutoTrader(model)
+        auto_trader.runSimulation(x_test, prices, interval, trading_months)
     else:
         print("> The biggest mistake you can make in life is to waste your time. – Jerry Bruckner")
         print("> P.S. Use an argument next time: --collect_coins or --train_and_trade")
