@@ -12,18 +12,20 @@ class AutoTrader:
         self.next_window_price = 0
 
     def buy(self):
-        prev_bought_at = self.account.bought_btc_at # How much did I buy BTC for before
-        if self.account.usd_balance - self.trade_amount >= 0:
-            if prev_bought_at == 0 or self.account.last_transaction_was_sell or (prev_bought_at > self.account.btc_price): #or (self.account.btc_price/prev_bought_at -1 > 0.005):
-                print(">> BUYING $",self.trade_amount," WORTH OF BITCOIN")
-                self.account.btc_amount += self.trade_amount / self.account.btc_price
+        current_transactions = 1
+        while self.account.usd_balance - self.trade_amount >= 0 and self.account.bought_btc_units <= 5 and current_transactions <= 2:
+            print(">> BUYING $", self.trade_amount, " WORTH OF BITCOIN")
+            transaction = {}
+            transaction['btc_amount'] = (self.trade_amount / self.next_window_price) * 0.995
+            transaction['btc_price'] = self.next_window_price
+            transaction['usd_amount'] = self.trade_amount
+            self.account.transactions.append(transaction)
+
+            self.account.btc_amount += (self.trade_amount / self.next_window_price) * 0.995
                 self.account.usd_balance -= self.trade_amount
-                self.account.bought_btc_at = self.account.btc_price
-                self.account.last_transaction_was_sell = False
-            else:
-                print(">> Not worth buying more BTC at the moment")
-        else:
-            print(">> Not enough USD left in your account to buy BTC ")
+            self.account.bought_btc_price = self.next_window_price
+            self.account.bought_btc_units += 1
+            current_transactions += 1
 
     def sell(self):
         if self.account.btc_balance - self.trade_amount >= 0:
