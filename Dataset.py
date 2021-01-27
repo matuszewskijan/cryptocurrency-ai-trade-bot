@@ -24,12 +24,12 @@ class Dataset:
     """
         Loads raw historic data of a particular coin and converts to JSON format
     """
-    def loadRawCoinHistoricData(self, coin_name):
-        print("> Loading Raw Historic Data for ", coin_name)
+    def loadRawCoinHistoricData(self, pair, interval, month):
+        print("> Loading Raw Historic Data for ", pair)
 
         data = None
 
-        with open('raw_historic_data/' + coin_name + '.json', ) as json_file:
+        with open('datasets/' + pair + '/' + str(interval) + '/' + month.replace("-", "_") + '.json', ) as json_file:
             data = json.load(json_file)
 
         return data
@@ -38,12 +38,13 @@ class Dataset:
         Loads all the coin data, for the selected months, into an ordered array. 
         Each row represents a the status of the coin each minute.
     """
-    def loadCoinData(self,coin_name,months):
-        print("> Loading data for ",coin_name)
+    def loadCoinData(self, pair, interval, months):
+        print("> Loading data for ", pair)
         ordered_data = []
         for month in months:
-            print(">> Loading month: ",month)
-            file_path = DATASET_DIR + coin_name + '/' + month +"__"+ coin_name + '.json'
+            print(">> Loading month: ", month)
+            file_path = DATASET_DIR + pair + '/'+ str(interval) + '/' + month.replace("-", "_") + '.json'
+
             with open(file_path) as json_file:
                 raw_data = json.load(json_file)
 
