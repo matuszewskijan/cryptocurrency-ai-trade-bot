@@ -84,9 +84,7 @@ if __name__ == '__main__':
         
         test_model.model.save("models/" + pair + "/" + str(interval))
 
-        print("> Creating Testing Data for ", COIN_PAIR)
-        data = dataset.loadCoinData(COIN_PAIR, TESTING_MONTHS)
-        x_test, y_test, prices = dataset.createTrainTestSets(COIN_PAIR, data, training_window=TRAINING_WINDOW, labeling_window=LABELING_WINDOW)
+        data = dataset.loadCoinData(pair, interval, trading_months)
 
         test_model = Model("AutoTraderAI", x_train)
         test_model.train(x_train, y_train, batch_size=64, epochs=10)
